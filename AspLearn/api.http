@@ -3,7 +3,7 @@ POST http://localhost:5182/tasks
 Content-Type: application/json
 
 {
-    "Title" : "Задача 1",
+    "Title" : "1234",
     "IsCompleted" : false
 }
 

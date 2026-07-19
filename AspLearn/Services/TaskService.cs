@@ -8,12 +8,7 @@ public class TaskService : ITasksService
     private List<TodoTask> tasks = new List<TodoTask>();
     private int id;
 
-    public IEnumerable<TaskDto> GetAllTasks() => tasks.Select(t => new TaskDto
-    {
-        Id = t.Id,
-        IsCompleted = t.IsCompleted,
-        Title = t.Title
-    });
+    public IEnumerable<TaskDto> GetAllTasks() => tasks.Select(GetDto);
 
     public TaskDto? GetTaskById(int id)
     {
@@ -21,17 +16,10 @@ public class TaskService : ITasksService
 
        if (task is null) return null;
 
-       var dto = new TaskDto
-       {
-           Id = task.Id,
-           IsCompleted = task.IsCompleted,
-           Title = task.Title
-       };
-
-       return dto;
+       return GetDto(task);
     }
 
-    public IEnumerable<TaskDto> GetFilteredTasks(bool? isCompleted, string? keyword)
+    public IEnumerable<TaskDto> GetFilteredTasks(bool? isCompleted, string? keyword, TaskPriority? priority)
     {
         var filteredTasks = tasks.AsEnumerable();
 
@@ -42,15 +30,16 @@ public class TaskService : ITasksService
 
         if (!string.IsNullOrEmpty(keyword))
         {
-            filteredTasks = filteredTasks.Where(t => t.Title.Contains(keyword, StringComparison.OrdinalIgnoreCase));
+            filteredTasks = filteredTasks.Where(t => t.Title.Contains(keyword, StringComparison.OrdinalIgnoreCase)
+                                                     || (t.Description?.Contains(keyword, StringComparison.OrdinalIgnoreCase) ?? false));
         }
 
-        return filteredTasks.Select(t => new TaskDto
+        if (priority.HasValue)
         {
-            Id = t.Id,
-            IsCompleted = t.IsCompleted,
-            Title = t.Title
-        }); ;
+            filteredTasks = filteredTasks.Where(t => t.Priority == priority);
+        }
+
+        return filteredTasks.Select(GetDto); 
     }
 
     public TaskDto AddTask(CreateTaskDto createTask)
@@ -59,19 +48,13 @@ public class TaskService : ITasksService
         {
             Id = ++id,
             IsCompleted = false,
-            Title = createTask.Title
+            Title = createTask.Title,
+            Description = createTask.Description
         };
 
         tasks.Add(task);
 
-        var dto = new TaskDto
-        {
-            Id = task.Id,
-            IsCompleted = task.IsCompleted,
-            Title = task.Title
-        };
-
-        return dto;
+        return GetDto(task);
     }
 
     public ServiceResult UpdateTask(int id, UpdateTaskDto newTask)
@@ -83,6 +66,7 @@ public class TaskService : ITasksService
 
         task.IsCompleted = newTask.IsCompleted;
         task.Title = newTask.Title;
+        task.Description = newTask.Description;
 
         return ServiceResult.Ok;
     }
@@ -97,4 +81,13 @@ public class TaskService : ITasksService
 
         return ServiceResult.Ok;
     }
+
+    private TaskDto GetDto(TodoTask task) => new TaskDto
+    {
+        Id = task.Id,
+        IsCompleted = task.IsCompleted,
+        Title = task.Title,
+        Description = task.Description,
+        Priority = task.Priority
+    };
 }

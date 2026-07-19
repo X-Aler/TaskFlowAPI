@@ -23,8 +23,8 @@ public class TasksController(ITasksService taskService) : ControllerBase
     }
 
     [HttpGet("filter")]
-    public IActionResult GetFilteredTasks([FromQuery] bool? isCompleted, [FromQuery] string? keyword) => 
-        Ok(taskService.GetFilteredTasks(isCompleted, keyword));
+    public IActionResult GetFilteredTasks([FromQuery] bool? isCompleted, [FromQuery] string? keyword, [FromQuery] TaskPriority? priority) => 
+        Ok(taskService.GetFilteredTasks(isCompleted, keyword, priority));
 
     [HttpPost]
     public IActionResult AddTask([FromBody] CreateTaskDto dto)

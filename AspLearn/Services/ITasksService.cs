@@ -8,7 +8,7 @@ public interface ITasksService
 {
     IEnumerable<TaskDto> GetAllTasks();
     TaskDto? GetTaskById(int id);
-    IEnumerable<TaskDto> GetFilteredTasks(bool? isCompleted, string? keyword);
+    IEnumerable<TaskDto> GetFilteredTasks(bool? isCompleted, string? keyword, TaskPriority? priority);
     TaskDto AddTask(CreateTaskDto task);
     ServiceResult UpdateTask(int id, UpdateTaskDto newTask);
     ServiceResult DeleteTask(int id);

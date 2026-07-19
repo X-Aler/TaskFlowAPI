@@ -1,5 +1,7 @@
 using AspLearn.Controllers;
+using AspLearn.Data;
 using AspLearn.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace AspLearn
 {
@@ -12,6 +14,8 @@ namespace AspLearn
             builder.Services.AddControllers();
 
             builder.Services.AddSingleton<ITasksService, TaskService>();
+
+            builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             var app = builder.Build();
 
