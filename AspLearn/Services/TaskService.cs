@@ -1,18 +1,16 @@
-﻿using AspLearn.Models;
+﻿using AspLearn.Data;
+using AspLearn.Models;
 using AspLearn.Models.DTOs;
 
 namespace AspLearn.Services;
 
-public class TaskService : ITasksService
+public class TaskService(AppDbContext dbContext) : ITasksService
 {
-    private List<TodoTask> tasks = new List<TodoTask>();
-    private int id;
-
-    public IEnumerable<TaskDto> GetAllTasks() => tasks.Select(GetDto);
+    public IEnumerable<TaskDto> GetAllTasks() => dbContext.Tasks.Select(GetDto).ToList();
 
     public TaskDto? GetTaskById(int id)
     {
-       var task = tasks.FirstOrDefault(t => t.Id == id);
+       var task = dbContext.Tasks.FirstOrDefault(t => t.Id == id);
 
        if (task is null) return null;
 
@@ -21,7 +19,7 @@ public class TaskService : ITasksService
 
     public IEnumerable<TaskDto> GetFilteredTasks(bool? isCompleted, string? keyword, TaskPriority? priority)
     {
-        var filteredTasks = tasks.AsEnumerable();
+        var filteredTasks = dbContext.Tasks.AsQueryable();
 
         if (isCompleted.HasValue)
         {
@@ -30,8 +28,10 @@ public class TaskService : ITasksService
 
         if (!string.IsNullOrEmpty(keyword))
         {
-            filteredTasks = filteredTasks.Where(t => t.Title.Contains(keyword, StringComparison.OrdinalIgnoreCase)
-                                                     || (t.Description?.Contains(keyword, StringComparison.OrdinalIgnoreCase) ?? false));
+            filteredTasks = filteredTasks.Where(t =>
+                t.Title.Contains(keyword) ||
+                (t.Description != null && t.Description.Contains(keyword))
+            );
         }
 
         if (priority.HasValue)
@@ -39,27 +39,28 @@ public class TaskService : ITasksService
             filteredTasks = filteredTasks.Where(t => t.Priority == priority);
         }
 
-        return filteredTasks.Select(GetDto); 
+        return filteredTasks.Select(GetDto).ToList(); 
     }
 
     public TaskDto AddTask(CreateTaskDto createTask)
     {
         var task = new TodoTask()
         {
-            Id = ++id,
             IsCompleted = false,
             Title = createTask.Title,
-            Description = createTask.Description
+            Description = createTask.Description,
+            Priority = createTask.Priority
         };
 
-        tasks.Add(task);
+        dbContext.Tasks.Add(task);
+        dbContext.SaveChanges();
 
         return GetDto(task);
     }
 
     public ServiceResult UpdateTask(int id, UpdateTaskDto newTask)
     {
-        var task = tasks.FirstOrDefault(t => t.Id == id);
+        var task = dbContext.Tasks.FirstOrDefault(t => t.Id == id);
 
         if (task is null) return ServiceResult.NotFound;
         if (newTask is null) return ServiceResult.BadRequest;
@@ -67,17 +68,19 @@ public class TaskService : ITasksService
         task.IsCompleted = newTask.IsCompleted;
         task.Title = newTask.Title;
         task.Description = newTask.Description;
+        dbContext.SaveChanges();
 
         return ServiceResult.Ok;
     }
 
     public ServiceResult DeleteTask(int id)
     {
-        var task = tasks.FirstOrDefault(t => t.Id == id);
+        var task = dbContext.Tasks.FirstOrDefault(t => t.Id == id);
 
         if (task is null) return ServiceResult.NotFound;
 
-        tasks.Remove(task);
+        dbContext.Tasks.Remove(task);
+        dbContext.SaveChanges();
 
         return ServiceResult.Ok;
     }
