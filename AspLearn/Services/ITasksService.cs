@@ -6,10 +6,10 @@ namespace AspLearn.Services;
 
 public interface ITasksService
 {
-    IEnumerable<TaskDto> GetAllTasks();
-    TaskDto? GetTaskById(int id);
-    IEnumerable<TaskDto> GetFilteredTasks(bool? isCompleted, string? keyword, TaskPriority? priority);
-    TaskDto AddTask(CreateTaskDto task);
-    ServiceResult UpdateTask(int id, UpdateTaskDto newTask);
-    ServiceResult DeleteTask(int id);
+    Task<IEnumerable<TaskDto>> GetAllTasksAsync();
+    Task<TaskDto?> GetTaskByIdAsync(int id);
+    Task<IEnumerable<TaskDto>> GetFilteredTasksAsync(bool? isCompleted, string? keyword, TaskPriority? priority);
+    Task<TaskDto> AddTaskAsync(CreateTaskDto task);
+    Task<ServiceResult> UpdateTaskAsync(int id, UpdateTaskDto newTask);
+    Task<ServiceResult> DeleteTaskAsync(int id);
 }

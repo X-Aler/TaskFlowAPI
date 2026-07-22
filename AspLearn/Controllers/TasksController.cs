@@ -10,12 +10,12 @@ namespace AspLearn.Controllers;
 public class TasksController(ITasksService taskService) : ControllerBase
 {
     [HttpGet]
-    public IActionResult GetTasks() => Ok(taskService.GetAllTasks());
+    public async Task<IActionResult> GetTasksAsync() => Ok(await taskService.GetAllTasksAsync());
 
     [HttpGet("{id}")]
-    public IActionResult GetTask([FromRoute] int id)
+    public async Task<IActionResult> GetTaskAsync([FromRoute] int id)
     {
-        var task = taskService.GetTaskById(id);
+        var task = await taskService.GetTaskByIdAsync(id);
 
         if (task is null) return NotFound();
 
@@ -23,23 +23,23 @@ public class TasksController(ITasksService taskService) : ControllerBase
     }
 
     [HttpGet("filter")]
-    public IActionResult GetFilteredTasks([FromQuery] bool? isCompleted, [FromQuery] string? keyword, [FromQuery] TaskPriority? priority) => 
-        Ok(taskService.GetFilteredTasks(isCompleted, keyword, priority));
+    public async Task<IActionResult> GetFilteredTasksAsync([FromQuery] bool? isCompleted, [FromQuery] string? keyword, [FromQuery] TaskPriority? priority) => 
+        Ok(await taskService.GetFilteredTasksAsync(isCompleted, keyword, priority));
 
     [HttpPost]
-    public IActionResult AddTask([FromBody] CreateTaskDto dto)
+    public async Task<IActionResult> AddTaskAsync([FromBody] CreateTaskDto dto)
     {
-        var createdTask = taskService.AddTask(dto);
+        var createdTask = await taskService.AddTaskAsync(dto);
 
         return Ok(createdTask);
     }
 
     [HttpPut("{id}")]
-    public IActionResult UpdateTask([FromRoute] int id, [FromBody] UpdateTaskDto newTask) =>
-        HandleStatus(taskService.UpdateTask(id, newTask));
+    public async Task<IActionResult> UpdateTaskAsync([FromRoute] int id, [FromBody] UpdateTaskDto newTask) =>
+        HandleStatus(await taskService.UpdateTaskAsync(id, newTask));
 
     [HttpDelete("{id}")]
-    public IActionResult DeleteTask([FromRoute] int id) => HandleStatus(taskService.DeleteTask(id));
+    public async Task<IActionResult> DeleteTaskAsync([FromRoute] int id) => HandleStatus(await taskService.DeleteTaskAsync(id));
 
     private IActionResult HandleStatus(ServiceResult result)
     {

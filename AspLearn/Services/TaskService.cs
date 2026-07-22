@@ -1,23 +1,29 @@
 ﻿using AspLearn.Data;
 using AspLearn.Models;
 using AspLearn.Models.DTOs;
+using Microsoft.EntityFrameworkCore;
 
 namespace AspLearn.Services;
 
 public class TaskService(AppDbContext dbContext) : ITasksService
 {
-    public IEnumerable<TaskDto> GetAllTasks() => dbContext.Tasks.Select(GetDto).ToList();
-
-    public TaskDto? GetTaskById(int id)
+    public async Task<IEnumerable<TaskDto>> GetAllTasksAsync()
     {
-       var task = dbContext.Tasks.FirstOrDefault(t => t.Id == id);
+        var tasks = await dbContext.Tasks.ToListAsync();
+
+        return tasks.Select(GetDto);
+    } 
+
+    public async Task<TaskDto?> GetTaskByIdAsync(int id)
+    {
+       var task = await dbContext.Tasks.FirstOrDefaultAsync(t => t.Id == id);
 
        if (task is null) return null;
 
        return GetDto(task);
     }
 
-    public IEnumerable<TaskDto> GetFilteredTasks(bool? isCompleted, string? keyword, TaskPriority? priority)
+    public async Task<IEnumerable<TaskDto>> GetFilteredTasksAsync(bool? isCompleted, string? keyword, TaskPriority? priority)
     {
         var filteredTasks = dbContext.Tasks.AsQueryable();
 
@@ -39,10 +45,12 @@ public class TaskService(AppDbContext dbContext) : ITasksService
             filteredTasks = filteredTasks.Where(t => t.Priority == priority);
         }
 
-        return filteredTasks.Select(GetDto).ToList(); 
+        var tasks = await filteredTasks.ToListAsync();
+
+        return tasks.Select(GetDto); 
     }
 
-    public TaskDto AddTask(CreateTaskDto createTask)
+    public async Task<TaskDto> AddTaskAsync(CreateTaskDto createTask)
     {
         var task = new TodoTask()
         {
@@ -53,14 +61,14 @@ public class TaskService(AppDbContext dbContext) : ITasksService
         };
 
         dbContext.Tasks.Add(task);
-        dbContext.SaveChanges();
+        await dbContext.SaveChangesAsync();
 
         return GetDto(task);
     }
 
-    public ServiceResult UpdateTask(int id, UpdateTaskDto newTask)
+    public async Task<ServiceResult> UpdateTaskAsync(int id, UpdateTaskDto newTask)
     {
-        var task = dbContext.Tasks.FirstOrDefault(t => t.Id == id);
+        var task = await dbContext.Tasks.FirstOrDefaultAsync(t => t.Id == id);
 
         if (task is null) return ServiceResult.NotFound;
         if (newTask is null) return ServiceResult.BadRequest;
@@ -68,19 +76,20 @@ public class TaskService(AppDbContext dbContext) : ITasksService
         task.IsCompleted = newTask.IsCompleted;
         task.Title = newTask.Title;
         task.Description = newTask.Description;
-        dbContext.SaveChanges();
+
+        await dbContext.SaveChangesAsync();
 
         return ServiceResult.Ok;
     }
 
-    public ServiceResult DeleteTask(int id)
+    public async Task<ServiceResult> DeleteTaskAsync(int id)
     {
-        var task = dbContext.Tasks.FirstOrDefault(t => t.Id == id);
+        var task = await dbContext.Tasks.FirstOrDefaultAsync(t => t.Id == id);
 
         if (task is null) return ServiceResult.NotFound;
 
         dbContext.Tasks.Remove(task);
-        dbContext.SaveChanges();
+        await dbContext.SaveChangesAsync();
 
         return ServiceResult.Ok;
     }
