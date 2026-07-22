@@ -43,16 +43,12 @@ public class TasksController(ITasksService taskService) : ControllerBase
 
     private IActionResult HandleStatus(ServiceResult result)
     {
-        switch (result)
+        return result switch
         {
-            case ServiceResult.Ok:
-                return Ok();
-            case ServiceResult.BadRequest:
-                return BadRequest();
-            case ServiceResult.NotFound:
-                return NotFound();
-            default:
-                throw new ArgumentOutOfRangeException(nameof(result), result, null);
-        }
+            ServiceResult.Ok => Ok(),
+            ServiceResult.BadRequest => BadRequest(),
+            ServiceResult.NotFound => NotFound(),
+            _ => throw new ArgumentOutOfRangeException(nameof(result), result, null),
+        };
     }
 }
