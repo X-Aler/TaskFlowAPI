@@ -1,11 +1,12 @@
 using AspLearn.Controllers;
 using AspLearn.Data;
+using AspLearn.Repositories;
 using AspLearn.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace AspLearn
 {
-    public class Program
+    public class Program 
     {
         public static void Main(string[] args)
         {
@@ -13,7 +14,9 @@ namespace AspLearn
 
             builder.Services.AddControllers();
 
-            builder.Services.AddSingleton<ITasksService, TaskService>();
+            builder.Services.AddScoped<ITasksService, TaskService>();
+            builder.Services.AddScoped<IAuthService, AuthService>();
+            builder.Services.AddScoped<ITasksRepository, TasksRepository>();
 
             builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 

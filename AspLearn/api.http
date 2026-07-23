@@ -26,6 +26,15 @@ GET http://localhost:5182/tasks/filter?isCompleted=false
 ### Получить все задачи
 GET http://localhost:5182/tasks
 
+### Получить токен
+POST http://localhost:5182/auth/login
+Content-Type: application/json
+
+{
+    "Login" : "admin",
+    "Password" : "password"
+}
+
 ### Получить конкретную задачу по ID
 GET http://localhost:5182/tasks/1
 ### Тест GET

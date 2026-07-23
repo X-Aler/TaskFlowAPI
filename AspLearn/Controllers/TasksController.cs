@@ -36,19 +36,9 @@ public class TasksController(ITasksService taskService) : ControllerBase
 
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateTaskAsync([FromRoute] int id, [FromBody] UpdateTaskDto newTask) =>
-        HandleStatus(await taskService.UpdateTaskAsync(id, newTask));
+        this.HandleStatus(await taskService.UpdateTaskAsync(id, newTask));
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteTaskAsync([FromRoute] int id) => HandleStatus(await taskService.DeleteTaskAsync(id));
+    public async Task<IActionResult> DeleteTaskAsync([FromRoute] int id) => this.HandleStatus(await taskService.DeleteTaskAsync(id));
 
-    private IActionResult HandleStatus(ServiceResult result)
-    {
-        return result switch
-        {
-            ServiceResult.Ok => Ok(),
-            ServiceResult.BadRequest => BadRequest(),
-            ServiceResult.NotFound => NotFound(),
-            _ => throw new ArgumentOutOfRangeException(nameof(result), result, null),
-        };
-    }
 }
