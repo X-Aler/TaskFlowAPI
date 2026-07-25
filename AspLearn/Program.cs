@@ -1,8 +1,11 @@
+using System.Text;
 using AspLearn.Controllers;
 using AspLearn.Data;
 using AspLearn.Repositories;
 using AspLearn.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace AspLearn
 {
@@ -17,10 +20,35 @@ namespace AspLearn
             builder.Services.AddScoped<ITasksService, TaskService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<ITasksRepository, TasksRepository>();
+            builder.Services.AddScoped<IUsersRepository, UsersRepository>();
 
             builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options => 
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = builder.Configuration["Token:Issuer"],
+
+                    ValidateAudience = true,
+                    ValidAudience = builder.Configuration["Token:Audience"],
+
+                    ValidateLifetime = true,
+
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(builder.Configuration["Token:SecretKey"]!))
+                }
+            );
+
+            builder.Services.AddAuthorization();
+
             var app = builder.Build();
+
+            app.UseRouting();
+
+            app.UseAuthentication();
+            app.UseAuthorization();
 
             app.MapControllers();
 

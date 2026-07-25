@@ -6,11 +6,11 @@ namespace AspLearn.Repositories;
 
 public class TasksRepository(AppDbContext dbContext) : ITasksRepository
 {
-    public async Task<IEnumerable<TodoTask>> GetAllTasksAsync() => await dbContext.Tasks.ToListAsync();
-    public async Task<TodoTask?> GetTaskByIdAsync(int id) => await dbContext.Tasks.FirstOrDefaultAsync(t => t.Id == id);
-    public async Task<IEnumerable<TodoTask>> GetFilteredTasksAsync(bool? isCompleted, string? keyword, TaskPriority? priority)
+    public async Task<IEnumerable<TodoTask>> GetAllTasksAsync(int userId) => await dbContext.Tasks.Where(t => t.UserId == userId).ToListAsync();
+    public async Task<TodoTask?> GetTaskByIdAsync(int userId, int taskId) => await dbContext.Tasks.FirstOrDefaultAsync(t => t.Id == taskId && t.UserId == userId);
+    public async Task<IEnumerable<TodoTask>> GetFilteredTasksAsync(int userId, bool? isCompleted, string? keyword, TaskPriority? priority)
     {
-        var filteredTasks = dbContext.Tasks.AsQueryable();
+        var filteredTasks = dbContext.Tasks.Where(t => t.UserId == userId).AsQueryable();
 
         if (isCompleted.HasValue)
         {

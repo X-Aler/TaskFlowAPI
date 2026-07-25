@@ -10,12 +10,15 @@ namespace AspLearn.Controllers;
 public class AuthController(IAuthService authService) : ControllerBase
 {
     [HttpPost("login")]
-    public IActionResult GetLogin([FromBody] LoginDto login)
+    public async Task<IActionResult> GetLoginAsync([FromBody] LoginDto login)
     {
-       var result = authService.Authenticate(login);
+       var result = await authService.AuthenticateAsync(login);
 
        if (string.IsNullOrEmpty(result)) return Unauthorized();
 
        return Ok(result);
     }
+
+    [HttpPost("register")]
+    public async Task<IActionResult> RegisterAsync([FromBody] RegisterDto register) => this.HandleStatus(await authService.RegisterAsync(register));
 }

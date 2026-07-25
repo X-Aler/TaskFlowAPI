@@ -16,6 +16,10 @@ Content-Type: application/json
     "IsCompleted" : true
 }
 
+###
+GET http://localhost:5182/tasks/whoami
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiYWRtaW4iLCJleHAiOjE3ODQ5MDQzMTAsImlzcyI6IlRhc2tGbG93QVBJIiwiYXVkIjoiVGFza0Zsb3dDbGllbnRzIn0.DJoazwg0hB1rDdAFt3bFAnXhzBlGMg4mwnnzj9j5k9c
+
 ### Получить все задачи (фильтер)
 GET http://localhost:5182/tasks/filter
 ### Получить все задачи (фильтер IsCompleted=true)
@@ -23,8 +27,12 @@ GET http://localhost:5182/tasks/filter?isCompleted=true
 ### Получить все задачи (фильтер IsCompleted=false)
 GET http://localhost:5182/tasks/filter?isCompleted=false
 
-### Получить все задачи
+### Получить все задачи без токена
 GET http://localhost:5182/tasks
+
+### Получить все задачи с токеном токена
+GET http://localhost:5182/tasks
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiYWRtaW4iLCJleHAiOjE3ODQ5MDQzMTAsImlzcyI6IlRhc2tGbG93QVBJIiwiYXVkIjoiVGFza0Zsb3dDbGllbnRzIn0.DJoazwg0hB1rDdAFt3bFAnXhzBlGMg4mwnnzj9j5k9c
 
 ### Получить токен
 POST http://localhost:5182/auth/login
