@@ -6,6 +6,7 @@ using AspLearn.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
 
 namespace AspLearn
 {
@@ -13,46 +14,70 @@ namespace AspLearn
     {
         public static void Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(args);
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .WriteTo.Console()
+                .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day)
+                .CreateLogger();
 
-            builder.Services.AddControllers();
+            Log.Information("Приложение запускается!");
 
-            builder.Services.AddScoped<ITasksService, TaskService>();
-            builder.Services.AddScoped<IAuthService, AuthService>();
-            builder.Services.AddScoped<ITasksRepository, TasksRepository>();
-            builder.Services.AddScoped<IUsersRepository, UsersRepository>();
+            try
+            {
+                var builder = WebApplication.CreateBuilder(args);
 
-            builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+                builder.Host.UseSerilog();
 
-            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options => 
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = true,
-                    ValidIssuer = builder.Configuration["Token:Issuer"],
+                builder.Services.AddControllers();
 
-                    ValidateAudience = true,
-                    ValidAudience = builder.Configuration["Token:Audience"],
+                builder.Services.AddScoped<ITasksService, TaskService>();
+                builder.Services.AddScoped<IAuthService, AuthService>();
+                builder.Services.AddScoped<ITasksRepository, TasksRepository>();
+                builder.Services.AddScoped<IUsersRepository, UsersRepository>();
 
-                    ValidateLifetime = true,
+                builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(builder.Configuration["Token:SecretKey"]!))
-                }
-            );
+                builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidIssuer = builder.Configuration["Token:Issuer"],
 
-            builder.Services.AddAuthorization();
+                        ValidateAudience = true,
+                        ValidAudience = builder.Configuration["Token:Audience"],
 
-            var app = builder.Build();
+                        ValidateLifetime = true,
 
-            app.UseRouting();
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(
+                            Encoding.UTF8.GetBytes(builder.Configuration["Token:SecretKey"]!))
+                    }
+                );
 
-            app.UseAuthentication();
-            app.UseAuthorization();
+                builder.Services.AddAuthorization();
 
-            app.MapControllers();
+                var app = builder.Build();
 
-            app.Run();
+                app.UseRouting();
+
+                app.UseAuthentication();
+                app.UseAuthorization();
+
+                app.MapControllers();
+
+                Log.Information("Приложение успешно запустилось!");
+
+                app.Run();
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "Приложение не удалось запустить!");
+                throw;
+            }
+            finally
+            {
+                Log.CloseAndFlush();
+            }
         }
     }
 }

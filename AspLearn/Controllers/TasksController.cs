@@ -16,19 +16,15 @@ public class TasksController(ITasksService taskService) : ControllerBase
     {
         var userId = GetUserId();
 
-        if (userId is null) return Unauthorized();
-
-        return Ok(await taskService.GetAllTasksAsync((int)userId));
+        return Ok(await taskService.GetAllTasksAsync(userId));
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("{taskId:int}")]
     public async Task<IActionResult> GetTaskAsync([FromRoute] int taskId)
     {
         var userId = GetUserId();
 
-        if (userId is null) return Unauthorized();
-
-        var task = await taskService.GetTaskByIdAsync((int)userId, taskId);
+        var task = await taskService.GetTaskByIdAsync(userId, taskId);
 
         if (task is null) return NotFound();
 
@@ -41,9 +37,7 @@ public class TasksController(ITasksService taskService) : ControllerBase
     {
         var userId = GetUserId();
 
-        if (userId is null) return Unauthorized();
-
-        return Ok(await taskService.GetFilteredTasksAsync((int)userId, isCompleted, keyword, priority));
+        return Ok(await taskService.GetFilteredTasksAsync(userId, isCompleted, keyword, priority));
     }
 
     [HttpPost]
@@ -51,31 +45,25 @@ public class TasksController(ITasksService taskService) : ControllerBase
     {
         var userId = GetUserId();
 
-        if (userId is null) return Unauthorized();
-
-        var createdTask = await taskService.AddTaskAsync((int)userId, dto);
+        var createdTask = await taskService.AddTaskAsync(userId, dto);
 
         return Ok(createdTask);
     }
 
-    [HttpPut("{id}")]
+    [HttpPut("{id:int}")]
     public async Task<IActionResult> UpdateTaskAsync([FromRoute] int id, [FromBody] UpdateTaskDto newTask)
     {
         var userId = GetUserId();
 
-        if (userId is null) return Unauthorized();
-
-        return this.HandleStatus(await taskService.UpdateTaskAsync((int)userId, id, newTask));
+        return this.HandleStatus(await taskService.UpdateTaskAsync(userId, id, newTask));
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteTaskAsync([FromRoute] int id)
     {
         var userId = GetUserId();
 
-        if (userId is null) return Unauthorized();
-
-        return this.HandleStatus(await taskService.DeleteTaskAsync((int)userId, id));
+        return this.HandleStatus(await taskService.DeleteTaskAsync(userId, id));
     }
 
     [HttpGet("whoami")]
@@ -88,15 +76,10 @@ public class TasksController(ITasksService taskService) : ControllerBase
         return Ok($"Текущий пользователь: {name}. Id: {id?.Value}");
     }
 
-    public int? GetUserId()
+    private int GetUserId()
     {
         var userIdString = User.FindFirst("Id")?.Value;
 
-        if (!int.TryParse(userIdString, out var userId))
-        {
-            return null;
-        }
-
-        return userId;
+        return int.Parse(userIdString!);
     }
 }

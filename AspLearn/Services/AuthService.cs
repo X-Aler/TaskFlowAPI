@@ -8,14 +8,30 @@ using System.Text;
 
 namespace AspLearn.Services;
 
-public class AuthService(IConfiguration config, IUsersRepository repository) : IAuthService
+public class AuthService(IConfiguration config, IUsersRepository repository, ILogger<AuthService> logger) : IAuthService
 {
     public async Task<string?> AuthenticateAsync(LoginDto login)
     {
+        logger.LogInformation("Пользователь {Login} начал аутентификацию.", login.Login);
+
         var user = await repository.GetUserByLoginAsync(login.Login);
 
-        if (user is null) return null;
-        if (!string.Equals(user.Password, login.Password)) return null;
+        if (user is null)
+        {
+            logger.LogWarning("Пользователь {Login} не найден.", login.Login);
+            return null;
+        }
+
+        logger.LogDebug("Пользователь {Login} найден.", login.Login);
+
+        var isPasswordCorrect = BCrypt.Net.BCrypt.Verify(login.Password, user.Password);
+        if (!isPasswordCorrect)
+        {
+            logger.LogWarning("Пользователь {Login} ввел неверный пароль.", login.Login);
+            return null;
+        }
+
+        logger.LogDebug("Пользователь {Login} ввел верный пароль.", login.Login);
 
         var claims = new List<Claim>
         {
@@ -24,7 +40,7 @@ public class AuthService(IConfiguration config, IUsersRepository repository) : I
         };
 
         var secretKey = config["Token:SecretKey"];
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey!));
 
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
@@ -38,23 +54,37 @@ public class AuthService(IConfiguration config, IUsersRepository repository) : I
 
         var tokenValue = new JwtSecurityTokenHandler().WriteToken(token);
 
+        logger.LogInformation("Аутентификацию пользователя {Login} прошла успешно.", login.Login);
+
         return tokenValue;
 
     }
 
     public async Task<ServiceResult> RegisterAsync(RegisterDto register)
     {
+        logger.LogInformation("Пользователь {Login} начал регистрацию.", register.Login);
+
         var isLoginTaken = await repository.GetUserByLoginAsync(register.Login) is not null;
 
-        if (isLoginTaken) return ServiceResult.BadRequest;
+        if (isLoginTaken)
+        {
+            logger.LogWarning("Пользователь c логином {Login} уже существует.", register.Login);
+            return ServiceResult.BadRequest;
+        }
+
+        logger.LogDebug("Логин {Login} свободен.", register.Login);
+
+        var hashPassword = BCrypt.Net.BCrypt.HashPassword(register.Password);
 
         var user = new User
         {
             Login = register.Login,
-            Password = register.Password
+            Password = hashPassword
         };
 
         await repository.AddUserAsync(user);
+
+        logger.LogInformation("Пользователь {Login} успешно прошел регистрацию.", register.Login);
 
         return ServiceResult.Ok;
     }
