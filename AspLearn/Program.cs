@@ -1,12 +1,13 @@
-using System.Text;
 using AspLearn.Controllers;
 using AspLearn.Data;
+using AspLearn.Middlewares;
 using AspLearn.Repositories;
 using AspLearn.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
+using System.Text;
 
 namespace AspLearn
 {
@@ -57,6 +58,8 @@ namespace AspLearn
                 builder.Services.AddAuthorization();
 
                 var app = builder.Build();
+
+                app.UseMiddleware<GlobalExceptionMiddleware>();
 
                 app.UseRouting();
 

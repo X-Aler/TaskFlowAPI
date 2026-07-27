@@ -32,10 +32,19 @@ GET http://localhost:5182/tasks
 
 ### Получить все задачи с токеном токена
 GET http://localhost:5182/tasks
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiYWRtaW4iLCJleHAiOjE3ODQ5MDQzMTAsImlzcyI6IlRhc2tGbG93QVBJIiwiYXVkIjoiVGFza0Zsb3dDbGllbnRzIn0.DJoazwg0hB1rDdAFt3bFAnXhzBlGMg4mwnnzj9j5k9c
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiYWRtaW4iLCJJZCI6IjEiLCJleHAiOjE3ODUxNjY0NjMsImlzcyI6IlRhc2tGbG93QVBJIiwiYXVkIjoiVGFza0Zsb3dDbGllbnRzIn0.FuPtB3m4UuG7eeVxIT2eCRLYbQNr7C8DH81mY4Z2ny4
 
 ### Получить токен
 POST http://localhost:5182/auth/login
+Content-Type: application/json
+
+{
+    "Login" : "admin",
+    "Password" : "password"
+}
+
+### Зарегестрироваться
+POST http://localhost:5182/auth/register
 Content-Type: application/json
 
 {

@@ -1,4 +1,5 @@
-﻿using AspLearn.Models;
+﻿using AspLearn.Exceptions;
+using AspLearn.Models;
 using AspLearn.Models.DTOs;
 using AspLearn.Repositories;
 using Microsoft.IdentityModel.Tokens;
@@ -10,7 +11,7 @@ namespace AspLearn.Services;
 
 public class AuthService(IConfiguration config, IUsersRepository repository, ILogger<AuthService> logger) : IAuthService
 {
-    public async Task<string?> AuthenticateAsync(LoginDto login)
+    public async Task<string> AuthenticateAsync(LoginDto login)
     {
         logger.LogInformation("Пользователь {Login} начал аутентификацию.", login.Login);
 
@@ -19,7 +20,7 @@ public class AuthService(IConfiguration config, IUsersRepository repository, ILo
         if (user is null)
         {
             logger.LogWarning("Пользователь {Login} не найден.", login.Login);
-            return null;
+            throw new UnauthorizedException($"Пользователь {login.Login} не найден.");
         }
 
         logger.LogDebug("Пользователь {Login} найден.", login.Login);
@@ -28,7 +29,7 @@ public class AuthService(IConfiguration config, IUsersRepository repository, ILo
         if (!isPasswordCorrect)
         {
             logger.LogWarning("Пользователь {Login} ввел неверный пароль.", login.Login);
-            return null;
+            throw new UnauthorizedException($"Пользователь {login.Login} ввел неверный пароль.");
         }
 
         logger.LogDebug("Пользователь {Login} ввел верный пароль.", login.Login);
@@ -60,7 +61,7 @@ public class AuthService(IConfiguration config, IUsersRepository repository, ILo
 
     }
 
-    public async Task<ServiceResult> RegisterAsync(RegisterDto register)
+    public async Task RegisterAsync(RegisterDto register)
     {
         logger.LogInformation("Пользователь {Login} начал регистрацию.", register.Login);
 
@@ -69,7 +70,7 @@ public class AuthService(IConfiguration config, IUsersRepository repository, ILo
         if (isLoginTaken)
         {
             logger.LogWarning("Пользователь c логином {Login} уже существует.", register.Login);
-            return ServiceResult.BadRequest;
+            throw new BadRequestException($"Пользователь c логином {register.Login} уже существует.");
         }
 
         logger.LogDebug("Логин {Login} свободен.", register.Login);
@@ -85,7 +86,5 @@ public class AuthService(IConfiguration config, IUsersRepository repository, ILo
         await repository.AddUserAsync(user);
 
         logger.LogInformation("Пользователь {Login} успешно прошел регистрацию.", register.Login);
-
-        return ServiceResult.Ok;
     }
 }

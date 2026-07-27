@@ -1,4 +1,5 @@
 ﻿using AspLearn.Data;
+using AspLearn.Exceptions;
 using AspLearn.Models;
 using AspLearn.Models.DTOs;
 using AspLearn.Repositories;
@@ -19,7 +20,7 @@ public class TaskService(ITasksRepository repository, ILogger<TaskService> logge
         return tasks.Select(GetDto);
     } 
 
-    public async Task<TaskDto?> GetTaskByIdAsync(int userId, int taskId)
+    public async Task<TaskDto> GetTaskByIdAsync(int userId, int taskId)
     {
         logger.LogInformation("Пользователь {userId} запросил задачу {taskId}.", userId, taskId); 
 
@@ -28,7 +29,7 @@ public class TaskService(ITasksRepository repository, ILogger<TaskService> logge
         if (task is null)
         {
             logger.LogWarning("Задача {taskId} пользователя {userId} не найдена.", taskId, userId);
-            return null;
+            throw new NotFoundException($"Задача {taskId} пользователя {userId} не найдена.");
         }
 
         logger.LogInformation("Пользователь {userId} получил задачу {taskId}.", userId, taskId);
@@ -47,7 +48,7 @@ public class TaskService(ITasksRepository repository, ILogger<TaskService> logge
         return filteredTasks.Select(GetDto); 
     }
 
-    public async Task<TaskDto> AddTaskAsync(int userId, CreateTaskDto createTask)
+    public async Task AddTaskAsync(int userId, CreateTaskDto createTask)
     {
         logger.LogInformation("Пользователь {userId} начал добавление задачи {Title}.", userId, createTask.Title);
 
@@ -63,11 +64,9 @@ public class TaskService(ITasksRepository repository, ILogger<TaskService> logge
         await repository.AddTaskAsync(task);
 
         logger.LogInformation("Пользователь {userId} успешно добавил задачу {Title}.", userId, createTask.Title);
-
-        return GetDto(task);
     }
 
-    public async Task<ServiceResult> UpdateTaskAsync(int userId, int taskId, UpdateTaskDto newTask)
+    public async Task UpdateTaskAsync(int userId, int taskId, UpdateTaskDto newTask)
     {
         logger.LogInformation("Пользователь {userId} начал обновление задачи {taskId}.", userId, taskId);
 
@@ -76,7 +75,7 @@ public class TaskService(ITasksRepository repository, ILogger<TaskService> logge
         if (task is null)
         {
             logger.LogWarning("Задача {taskId} пользователя {userId} не найдена.", taskId, userId);
-            return ServiceResult.NotFound;
+            throw new NotFoundException($"Задача {taskId} пользователя {userId} не найдена.");
         }
 
         task.IsCompleted = newTask.IsCompleted;
@@ -86,11 +85,9 @@ public class TaskService(ITasksRepository repository, ILogger<TaskService> logge
         await repository.UpdateTaskAsync();
 
         logger.LogInformation("Пользователь {userId} успешно обновил задачу {taskId}.", userId, taskId);
-
-        return ServiceResult.Ok;
     }
 
-    public async Task<ServiceResult> DeleteTaskAsync(int userId, int taskId)
+    public async Task DeleteTaskAsync(int userId, int taskId)
     {
         logger.LogInformation("Пользователь {userId} начал удаление задачи {taskId}.", userId, taskId);
 
@@ -99,14 +96,12 @@ public class TaskService(ITasksRepository repository, ILogger<TaskService> logge
         if (task is null)
         {
             logger.LogWarning("Задача {taskId} пользователя {userId} не найдена.", taskId, userId);
-            return ServiceResult.NotFound;
+            throw new NotFoundException($"Задача {taskId} пользователя {userId} не найдена.");
         }
 
         await repository.DeleteTaskAsync(task);
 
         logger.LogInformation("Пользователь {userId} успешно удалил задачу {taskId}.", userId, taskId);
-
-        return ServiceResult.Ok;
     }
 
     private TaskDto GetDto(TodoTask task) => new TaskDto

@@ -26,8 +26,6 @@ public class TasksController(ITasksService taskService) : ControllerBase
 
         var task = await taskService.GetTaskByIdAsync(userId, taskId);
 
-        if (task is null) return NotFound();
-
         return Ok(task);
     }
 
@@ -45,9 +43,9 @@ public class TasksController(ITasksService taskService) : ControllerBase
     {
         var userId = GetUserId();
 
-        var createdTask = await taskService.AddTaskAsync(userId, dto);
+        await taskService.AddTaskAsync(userId, dto);
 
-        return Ok(createdTask);
+        return Ok();
     }
 
     [HttpPut("{id:int}")]
@@ -55,7 +53,9 @@ public class TasksController(ITasksService taskService) : ControllerBase
     {
         var userId = GetUserId();
 
-        return this.HandleStatus(await taskService.UpdateTaskAsync(userId, id, newTask));
+        await taskService.UpdateTaskAsync(userId, id, newTask);
+
+        return Ok();
     }
 
     [HttpDelete("{id:int}")]
@@ -63,7 +63,9 @@ public class TasksController(ITasksService taskService) : ControllerBase
     {
         var userId = GetUserId();
 
-        return this.HandleStatus(await taskService.DeleteTaskAsync(userId, id));
+        await taskService.DeleteTaskAsync(userId, id);
+
+        return Ok();
     }
 
     [HttpGet("whoami")]
