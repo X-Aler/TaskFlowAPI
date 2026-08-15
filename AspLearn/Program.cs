@@ -36,7 +36,7 @@ namespace AspLearn
                 builder.Services.AddScoped<ITasksRepository, TasksRepository>();
                 builder.Services.AddScoped<IUsersRepository, UsersRepository>();
 
-                builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+                builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
                 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
                     options.TokenValidationParameters = new TokenValidationParameters
