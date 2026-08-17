@@ -1,5 +1,5 @@
 services:
-  apslearn-db:
+  taskflow-db:
     image: postgres:15-alpine
     environment:
       POSTGRES_USER: admin
@@ -7,3 +7,23 @@ services:
       POSTGRES_DB: asplearn_database
     ports:
       - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+  taskflow-api:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Host=taskflow-db;Port=5432;Database=taskflow_database;Username=admin;Password=sups123"
+      ConnectionStrings__Redis: "taskflow-cache:6379"
+    build: .
+    ports:
+      - "5000:8080"
+    depends_on: 
+      - "taskflow-db"
+      - "taskflow-cache"
+    restart: on-failure
+  taskflow-cache:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+volumes:
+  db-data:

@@ -55,6 +55,12 @@ namespace AspLearn
                     }
                 );
 
+                builder.Services.AddStackExchangeRedisCache(options =>
+                {
+                    options.Configuration = builder.Configuration.GetConnectionString("Redis");
+                    options.InstanceName = "TaskFlow_";
+                });
+
                 builder.Services.AddAuthorization();
 
                 var app = builder.Build();
@@ -67,6 +73,15 @@ namespace AspLearn
                 app.UseAuthorization();
 
                 app.MapControllers();
+
+                using (var scope = app.Services.CreateScope())
+                {
+                    var services = scope.ServiceProvider;
+
+                    var dbContext = services.GetRequiredService<AppDbContext>();
+
+                    dbContext.Database.Migrate();
+                }
 
                 Log.Information("Приложение успешно запустилось!");
 

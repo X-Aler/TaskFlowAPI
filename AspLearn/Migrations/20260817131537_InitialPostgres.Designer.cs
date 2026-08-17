@@ -11,7 +11,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AspLearn.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260815131959_InitialPostgres")]
+    [Migration("20260817131537_InitialPostgres")]
     partial class InitialPostgres
     {
         /// <inheritdoc />

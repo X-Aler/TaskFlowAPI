@@ -1,70 +1,146 @@
-﻿### Создать задачу №1 (POST принимает одиночный объект, а не массив)
-POST http://localhost:5182/tasks
+﻿### =================================================================
+### ПЕРЕМЕННЫЕ ОКРУЖЕНИЯ
+### =================================================================
+# Для Docker используй порт 5000, для локального запуска из IDE — 5182
+@baseUrl = http://localhost:5000
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiYWRtaW4iLCJJZCI6IjEiLCJleHAiOjE3ODY5NzYyMTQsImlzcyI6IlRhc2tGbG93QVBJIiwiYXVkIjoiVGFza0Zsb3dDbGllbnRzIn0.VNga-tvJpCE825QvU5aYmlBX07CVJ4icwNxH4-zXLW0
+
+### =================================================================
+### 1. АУТЕНТИФИКАЦИЯ (AUTH)
+### =================================================================
+
+### 1.1 Регистрация нового пользователя
+POST {{baseUrl}}/auth/register
 Content-Type: application/json
 
 {
-    "Title" : "1234",
-    "IsCompleted" : false
+  "login": "admin",
+  "password": "Password123!"
 }
 
-### Создать задачу №2
-POST http://localhost:5182/tasks
+### 1.2 Логин и получение JWT-токена
+POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
 {
-    "Title" : "Задача 2",
-    "IsCompleted" : true
+  "login": "admin",
+  "password": "Password123!"
 }
 
-###
-GET http://localhost:5182/tasks/whoami
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiYWRtaW4iLCJleHAiOjE3ODQ5MDQzMTAsImlzcyI6IlRhc2tGbG93QVBJIiwiYXVkIjoiVGFza0Zsb3dDbGllbnRzIn0.DJoazwg0hB1rDdAFt3bFAnXhzBlGMg4mwnnzj9j5k9c
+### =================================================================
+### 2. ПРОВЕРКА АВТОРИЗАЦИИ
+### =================================================================
 
-### Получить все задачи (фильтер)
-GET http://localhost:5182/tasks/filter
-### Получить все задачи (фильтер IsCompleted=true)
-GET http://localhost:5182/tasks/filter?isCompleted=true
-### Получить все задачи (фильтер IsCompleted=false)
-GET http://localhost:5182/tasks/filter?isCompleted=false
+### 2.1 Кто я (проверка извлечения Claims из JWT)
+GET {{baseUrl}}/tasks/whoami
+Authorization: Bearer {{token}}
 
-### Получить все задачи без токена
-GET http://localhost:5182/tasks
+### =================================================================
+### 3. СОЗДАНИЕ ЗАДАЧ (POST)
+### =================================================================
 
-### Получить все задачи с токеном токена
-GET http://localhost:5182/tasks
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiYWRtaW4iLCJJZCI6IjEiLCJleHAiOjE3ODUxNjY0NjMsImlzcyI6IlRhc2tGbG93QVBJIiwiYXVkIjoiVGFza0Zsb3dDbGllbnRzIn0.FuPtB3m4UuG7eeVxIT2eCRLYbQNr7C8DH81mY4Z2ny4
-
-### Получить токен
-POST http://localhost:5182/auth/login
+### 3.1 Создать задачу с высоким приоритетом (Priority: 0=Low, 1=Medium, 2=High)
+POST {{baseUrl}}/tasks
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "Login" : "admin",
-    "Password" : "password"
+  "title": "Настроить кэширование Redis",
+  "description": "Интегрировать IDistributedCache в TaskService",
+  "priority": 2
 }
 
-### Зарегестрироваться
-POST http://localhost:5182/auth/register
+### 3.2 Создать простую задачу (только заголовок)
+POST {{baseUrl}}/tasks
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "Login" : "admin",
-    "Password" : "password"
+  "title": "Покрыть код Unit-тестами",
+  "description": null,
+  "priority": 0
 }
 
-### Получить конкретную задачу по ID
-GET http://localhost:5182/tasks/1
-### Тест GET
-GET http://localhost:5182/tasks/2315
+### =================================================================
+### 4. ПОЛУЧЕНИЕ И КЭШИРОВАНИЕ ЗАДАЧ (GET)
+### =================================================================
 
-### Обновить задачу (Параметр ID передается в URL, а измененные данные — в теле)
-PUT http://localhost:5182/tasks/1
+### 4.1 Получить все задачи текущего пользователя
+GET {{baseUrl}}/tasks
+Authorization: Bearer {{token}}
+
+### 4.2 Получить задачу по ID (1-й запрос идет в БД, 2-й запрос идет в кэш Redis)
+GET {{baseUrl}}/tasks/2
+Authorization: Bearer {{token}}
+
+### 4.3 Фильтрация: только выполненные задачи
+GET {{baseUrl}}/tasks/filter?isCompleted=true
+Authorization: Bearer {{token}}
+
+### 4.4 Фильтрация: только невыполненные задачи
+GET {{baseUrl}}/tasks/filter?isCompleted=false
+Authorization: Bearer {{token}}
+
+### 4.5 Фильтрация: поиск по ключевому слову
+GET {{baseUrl}}/tasks/filter?keyword=Redis
+Authorization: Bearer {{token}}
+
+### 4.6 Фильтрация: по приоритету (High = 2)
+GET {{baseUrl}}/tasks/filter?priority=2
+Authorization: Bearer {{token}}
+
+### 4.7 Комплексная фильтрация (невыполненные + ключевое слово + приоритет)
+GET {{baseUrl}}/tasks/filter?isCompleted=false&keyword=тест&priority=0
+Authorization: Bearer {{token}}
+
+### =================================================================
+### 5. ОБНОВЛЕНИЕ И УДАЛЕНИЕ (ИНВАЛИДАЦИЯ КЭША)
+### =================================================================
+
+### 5.1 Обновить задачу (сбрасывает устаревший кэш в Redis)
+PUT {{baseUrl}}/tasks/1
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "Title" : "Обновленная задача 1",
-    "IsCompleted" : true
+  "title": "Настроить кэширование Redis (Выполнено)",
+  "description": "IDistributedCache успешно внедрен и протестирован",
+  "isCompleted": true
 }
 
-### Удалить задачу (Параметр ID передается в URL)
-DELETE http://localhost:5182/tasks/2
+### 5.2 Удалить задачу (удаляет запись из БД и кэша Redis)
+DELETE {{baseUrl}}/tasks/1
+Authorization: Bearer {{token}}
+
+### =================================================================
+### 6. НЕГАТИВНЫЕ ТЕСТЫ (ПРОВЕРКА ИСКЛЮЧЕНИЙ И ВАЛИДАЦИИ)
+### =================================================================
+
+### 6.1 Запрос без токена (Ожидается: 401 Unauthorized)
+GET {{baseUrl}}/tasks
+
+### 6.2 Получение несуществующей задачи (Ожидается: 404 NotFoundException)
+GET {{baseUrl}}/tasks/99999
+Authorization: Bearer {{token}}
+
+### 6.3 Создание задачи с пустым заголовком (Ожидается: 400 Bad Request / Validation Error)
+POST {{baseUrl}}/tasks
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "",
+  "description": "Описание без названия",
+  "priority": 1
+}
+
+### 6.4 Попытка обновления чужой / несуществующей задачи (Ожидается: 404 NotFoundException)
+PUT {{baseUrl}}/tasks/99999
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Фантом",
+  "description": "Такой задачи нет",
+  "isCompleted": false
+}

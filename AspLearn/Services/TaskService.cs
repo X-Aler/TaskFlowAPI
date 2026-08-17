@@ -4,10 +4,12 @@ using AspLearn.Models;
 using AspLearn.Models.DTOs;
 using AspLearn.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
+using System.Text.Json;
 
 namespace AspLearn.Services;
 
-public class TaskService(ITasksRepository repository, ILogger<TaskService> logger) : ITasksService
+public class TaskService(ITasksRepository repository, IDistributedCache cache, ILogger<TaskService> logger) : ITasksService
 {
     public async Task<IEnumerable<TaskDto>> GetAllTasksAsync(int userId)
     {
@@ -22,19 +24,43 @@ public class TaskService(ITasksRepository repository, ILogger<TaskService> logge
 
     public async Task<TaskDto> GetTaskByIdAsync(int userId, int taskId)
     {
-        logger.LogInformation("Пользователь {userId} запросил задачу {taskId}.", userId, taskId); 
+        logger.LogInformation("Пользователь {userId} запросил задачу {taskId}.", userId, taskId);
 
-        var task = await repository.GetTaskByIdAsync(userId, taskId);
+        var cacheKey = $"user:{userId}:task:{taskId}";
 
-        if (task is null)
+        var cachedJson = await cache.GetStringAsync(cacheKey);
+
+        if (string.IsNullOrEmpty(cachedJson))
         {
-            logger.LogWarning("Задача {taskId} пользователя {userId} не найдена.", taskId, userId);
-            throw new NotFoundException($"Задача {taskId} пользователя {userId} не найдена.");
+            var task = await repository.GetTaskByIdAsync(userId, taskId);
+
+            if (task is null)
+            {
+                logger.LogWarning("Задача {taskId} пользователя {userId} не найдена.", taskId, userId);
+                throw new NotFoundException($"Задача {taskId} пользователя {userId} не найдена.");
+            }
+
+            var taskDto = GetDto(task);
+
+            var jsonCache = JsonSerializer.Serialize(taskDto);
+
+            var cacheOptions = new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
+            };
+
+            await cache.SetStringAsync(cacheKey, jsonCache, cacheOptions);
+
+            logger.LogInformation("Пользователь {userId} получил задачу {taskId} из БД.", userId, taskId);
+
+            return taskDto;
         }
 
-        logger.LogInformation("Пользователь {userId} получил задачу {taskId}.", userId, taskId);
+        var cachedDto = JsonSerializer.Deserialize<TaskDto>(cachedJson);
 
-        return GetDto(task);
+        logger.LogInformation("Пользователь {userId} получил задачу {taskId} из кэша Redis.", userId, taskId);
+
+        return cachedDto;
     }
 
     public async Task<IEnumerable<TaskDto>> GetFilteredTasksAsync(int userId, bool? isCompleted, string? keyword, TaskPriority? priority)
@@ -85,6 +111,12 @@ public class TaskService(ITasksRepository repository, ILogger<TaskService> logge
         await repository.UpdateTaskAsync();
 
         logger.LogInformation("Пользователь {userId} успешно обновил задачу {taskId}.", userId, taskId);
+
+        var cacheKey = $"user:{userId}:task:{taskId}";
+
+        await cache.RemoveAsync(cacheKey);
+
+        logger.LogInformation("Задача {taskId} пользователя {userId} удалена из кэша Reddis", taskId, userId);
     }
 
     public async Task DeleteTaskAsync(int userId, int taskId)
@@ -101,7 +133,13 @@ public class TaskService(ITasksRepository repository, ILogger<TaskService> logge
 
         await repository.DeleteTaskAsync(task);
 
-        logger.LogInformation("Пользователь {userId} успешно удалил задачу {taskId}.", userId, taskId);
+        logger.LogInformation("Пользователь {userId} успешно удалил задачу {taskId} из БД.", userId, taskId);
+
+        var cacheKey = $"user:{userId}:task:{taskId}";
+
+        await cache.RemoveAsync(cacheKey);
+
+        logger.LogInformation("Задача {taskId} пользователя {userId} удалена из кэша Reddis", taskId, userId);
     }
 
     private TaskDto GetDto(TodoTask task) => new TaskDto
