@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="AspLearn.UnitTests/AspLearn.UnitTests.csproj" />
   <Project Path="AspLearn/AspLearn.csproj" />
 </Solution>

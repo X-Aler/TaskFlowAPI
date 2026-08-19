@@ -5,6 +5,6 @@ namespace AspLearn.Services;
 
 public interface IAuthService
 {
-    Task<string> AuthenticateAsync(LoginDto login);
+    Task<string> LoginAsync(LoginDto login);
     Task RegisterAsync(RegisterDto register);
 }

@@ -11,7 +11,7 @@ namespace AspLearn.Services;
 
 public class AuthService(IConfiguration config, IUsersRepository repository, ILogger<AuthService> logger) : IAuthService
 {
-    public async Task<string> AuthenticateAsync(LoginDto login)
+    public async Task<string> LoginAsync(LoginDto login)
     {
         logger.LogInformation("Пользователь {Login} начал аутентификацию.", login.Login);
 
